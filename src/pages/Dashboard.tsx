@@ -10,6 +10,43 @@ const Dashboard: React.FC = () => {
     const [teamRanking, setTeamRanking] = useState<string | null>('Loading...');
     const [matchesScouted, setMatchesScouted] = useState<string | number>('Loading...');
     const [Accuracy, setAccuracy] = useState<string | number>('Loading...');
+    const [qualificationScore, setQualificationScore] = useState<string | number>('Loading...');
+
+    useEffect(() => {
+        const fetchQualificationScore = () => {
+            const db = getDatabase();
+            const matchesRef = ref(db, 'matches');
+
+            onValue(matchesRef, (snapshot) => {
+                const matches = snapshot.val();
+                if (matches) {
+                    const matchArray = Object.values(matches);
+                    const lastMatch = matchArray
+                        .filter((match: any) =>
+                            match.alliances.red.includes('6738') || match.alliances.blue.includes('6738')
+                        )
+                        .sort((a: any, b: any) => b.match_number - a.match_number)[0];
+
+                    if (lastMatch) {
+                        const isRedAlliance = lastMatch.alliances.red.includes('6738');
+                        const score = isRedAlliance
+                            ? lastMatch.alliances.red_score
+                            : lastMatch.alliances.blue_score;
+                        setQualificationScore(score);
+                    } else {
+                        setQualificationScore('No matches found.');
+                    }
+                } else {
+                    setQualificationScore('No matches data available.');
+                }
+            }, (error) => {
+                console.error('Error fetching matches:', error);
+                setQualificationScore('Error');
+            });
+        };
+
+        fetchQualificationScore();
+    }, []);
 
     useEffect(() => {
         const fetchTeamRanking = async () => {
@@ -94,7 +131,7 @@ const Dashboard: React.FC = () => {
         <div className="animate-fade-in">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-neutral-900">Event Dashboard</h1>
-                <p className="text-neutral-500">2025 Regional Competition</p>
+                <p className="text-neutral-500">Israel District Event #4</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -121,7 +158,7 @@ const Dashboard: React.FC = () => {
                 />
                 <MetricCard
                     title="Qualification Score"
-                    value="89.2"
+                    value={qualificationScore}
                     change={1.2}
                     changeType="negative"
                     icon={<ArrowUp className="text-success" />}
