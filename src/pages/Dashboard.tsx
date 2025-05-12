@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import MetricCard from '../components/MetricCard';
 import EventSchedule from '../components/EventSchedule';
-import TopTeamsChart from '../components/TopTeamsChart';
+import TeamMatches from '../components/TeamMatches';
 import UpcomingMatches from '../components/UpcomingMatches';
-import { ArrowUp, Target, Users, Clock } from 'lucide-react';
-import { getDatabase, ref, onValue } from '../firebase/firebase';
+import {ArrowUp, Target, Users, Clock} from 'lucide-react';
+import {getDatabase, ref, onValue} from '../firebase/firebase';
 
 const Dashboard: React.FC = () => {
     const [teamRanking, setTeamRanking] = useState<string | null>('Loading...');
@@ -140,37 +140,36 @@ const Dashboard: React.FC = () => {
                     value={teamRanking}
                     change={2}
                     changeType="positive"
-                    icon={<Target className="text-primary-500" />}
+                    icon={<Target className="text-primary-500"/>}
                 />
                 <MetricCard
                     title="Matches Scouted"
                     value={matchesScouted}
                     change={8}
                     changeType="positive"
-                    icon={<Clock className="text-info" />}
+                    icon={<Clock className="text-info"/>}
                 />
                 <MetricCard
                     title="Accuracy Rate"
                     value={Accuracy}
                     change={-4}
                     changeType="negative"
-                    icon={<Users className="text-secondary-500" />}
+                    icon={<Users className="text-secondary-500"/>}
                 />
                 <MetricCard
                     title="Qualification Score"
                     value={qualificationScore}
                     change={1.2}
                     changeType="negative"
-                    icon={<ArrowUp className="text-success" />}
+                    icon={<ArrowUp className="text-success"/>}
                 />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-4">
-                    <h2 className="text-lg font-semibold mb-4">Top Team Performance</h2>
-                    <TopTeamsChart/>
+                    <TeamMatches/>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm p-4">
+                <div className="bg-white rounded-lg shadow-sm p-4 h-full pb-0">
                     <h2 className="text-lg font-semibold mb-4">Upcoming Matches</h2>
                     <UpcomingMatches/>
                 </div>

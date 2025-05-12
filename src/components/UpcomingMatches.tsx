@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { getDatabase, ref, onValue } from '../firebase/firebase';
 
 interface Match {
@@ -12,27 +12,29 @@ interface Match {
 const UpcomingMatches: React.FC = () => {
     const [matchesData, setMatchesData] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
-    const [currentMatch, setCurrentMatch] = useState<string | number>('Loading...');
 
     useEffect(() => {
         const fetchCurrentMatch = () => {
             const db = getDatabase();
             const currentMatchRef = ref(db, 'currentMatch');
 
-            onValue(currentMatchRef, (snapshot) => {
-                const value = snapshot.val();
-                setCurrentMatch(value ? value.toString() : 'No data available');
-            }, (error) => {
-                console.error('Error fetching currentMatch:', error);
-                setCurrentMatch('Error');
-            });
+            onValue(
+                currentMatchRef,
+                (snapshot: { val: () => unknown }) => {
+                    const value = snapshot.val();
+                    console.log('Current Match:', value ? value.toString() : 'No data available');
+                },
+                (error: Error) => {
+                    console.error('Error fetching currentMatch:', error);
+                }
+            );
         };
 
         fetchCurrentMatch();
     }, []);
 
-    const startMatch = 12; // Change this to set the starting match index
-    const matchesToShow = 4; // Change this to set how many matches to display
+    const startMatch = 12;
+    const matchesToShow = 6;
 
     useEffect(() => {
         const fetchMatches = async () => {
@@ -55,17 +57,21 @@ const UpcomingMatches: React.FC = () => {
 
                 const data = await response.json();
                 const formattedMatches = data
-                    .filter((match: any) => match.match_number) // Ensure match_number exists
-                    .map((match: any) => ({
+                    .filter((match: { match_number: number }) => match.match_number)
+                    .map((match: unknown) => ({
                         number: match.match_number,
-                        time: match.time ? new Date(match.time * 1000).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        }) : 'TBD',
+                        time: match.time
+                            ? new Date(match.time * 1000).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                              })
+                            : 'TBD',
                         red: match.alliances.red.team_keys.map((team: string) => team.replace('frc', '')),
                         blue: match.alliances.blue.team_keys.map((team: string) => team.replace('frc', '')),
-                        yourTeam: match.alliances.red.team_keys.includes('frc6738') || match.alliances.blue.team_keys.includes('frc6738'),
-                    }))
+                        yourTeam:
+                            match.alliances.red.team_keys.includes('frc6738') ||
+                            match.alliances.blue.team_keys.includes('frc6738'),
+                    }));
 
                 setMatchesData(formattedMatches);
             } catch (error) {
@@ -77,6 +83,7 @@ const UpcomingMatches: React.FC = () => {
 
         fetchMatches();
     }, []);
+
     if (loading) {
         return <p>Loading matches...</p>;
     }
@@ -84,7 +91,7 @@ const UpcomingMatches: React.FC = () => {
     const displayedMatches = matchesData.slice(startMatch - 1, startMatch - 1 + matchesToShow);
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-3 pb-0">
             {displayedMatches.map((match) => (
                 <div
                     key={match.number}
@@ -112,8 +119,8 @@ const UpcomingMatches: React.FC = () => {
                                                 : ''
                                         }`}
                                     >
-                    {team}
-                  </span>
+                                        {team}
+                                    </span>
                                 ))}
                             </div>
                         </div>
@@ -130,8 +137,8 @@ const UpcomingMatches: React.FC = () => {
                                                 : ''
                                         }`}
                                     >
-                    {team}
-                  </span>
+                                        {team}
+                                    </span>
                                 ))}
                             </div>
                         </div>
