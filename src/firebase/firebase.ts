@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { getDatabase, onValue, ref, set, get} from 'firebase/database';
+import { getDatabase, onValue, ref, set, get, update} from 'firebase/database';
 
 // This configuration should be replaced with your Firebase project config
 const firebaseConfig = {
@@ -20,4 +20,4 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-export {getDatabase, app, db, auth, onValue, ref , set, get};
+export {getDatabase, app, db, auth, onValue, ref , set, get, update};

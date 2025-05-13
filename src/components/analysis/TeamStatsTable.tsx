@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {TrendingUp, TrendingDown} from 'lucide-react';
-import {getDatabase, ref, get} from 'firebase/database'; // For Realtime Database
+import {getDatabase, ref, get} from '../../firebase/firebase'; // For Realtime Database
 
 interface TeamStatsTableProps {
     teamNumber: number;
@@ -89,26 +89,28 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({teamNumber}) => {
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Consistency Rating</div>
-                    <div className="text-xl font-semibold">{stats.consistencyRating}/10</div>
+                    <div className="text-xl font-semibold">{stats.consistencyRate / 10}/10</div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Defense Rating</div>
-                    <div className="text-xl font-semibold">{stats.defenseRating}/10</div>
+                    <div className="text-xl font-semibold">
+                        {stats.defenseRating < 2 ? "Not Defensive" : `${stats.defenseRating}/10`}
+                    </div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Matches Played</div>
-                    <div className="text-xl font-semibold">{stats.matchesPlayed}</div>
+                    <div className="text-xl font-semibold">{stats.matchesPlayed/2}</div>
                 </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4 mt-4">
                 <div className="p-3 bg-primary-50 rounded-lg border border-primary-100">
                     <div className="text-sm text-primary-700">OPR (Offensive Power Rating)</div>
-                    <div className="text-xl font-semibold text-primary-800">{stats.opr}</div>
+                    <div className="text-xl font-semibold text-primary-800">{stats.opr.toFixed(3)}</div>
                 </div>
                 <div className="p-3 bg-secondary-50 rounded-lg border border-secondary-100">
                     <div className="text-sm text-secondary-700">DPR (Defensive Power Rating)</div>
-                    <div className="text-xl font-semibold text-secondary-800">{stats.dpr}</div>
+                    <div className="text-xl font-semibold text-secondary-800">{stats.dpr.toFixed(3)}</div>
                 </div>
                 <div className="p-3 bg-neutral-100 rounded-lg border border-neutral-200">
                     <div className="text-sm text-neutral-700">CCWM</div>

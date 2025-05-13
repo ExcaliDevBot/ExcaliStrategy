@@ -1,70 +1,201 @@
-import { getDatabase, ref, get, set } from '../../src/firebase/firebase';
+import {getDatabase, ref, get, set, update} from '../../src/firebase/firebase';
+import axios from 'axios';
+
+const TBA_API_BASE_URL = 'https://www.thebluealliance.com/api/v3';
+const TBA_API_KEY = 'DGOg0BIAQjm8EO3EkO50txFeLxpklBtotoW9qnHxUzoeecJIlRzOz8CsgNjZ4fyO';
+const TBA_EVENT_KEY = '2025iscmp';
 
 export const calculateAndStoreAverages = async (teamId: number): Promise<void> => {
-  try {
-    const db = getDatabase();
-    const scoutingDataRef = ref(db, 'scoutingData');
-    const snapshot = await get(scoutingDataRef);
+    try {
+        const db = getDatabase();
+        const scoutingDataRef = ref(db, 'scoutingData');
+        const snapshot = await get(scoutingDataRef);
 
-    if (!snapshot.exists()) {
-      console.error('No scouting data found.');
-      return;
-    }
-
-    const scoutingData = snapshot.val();
-    const valuesToCompute = ['autoL1', 'autoL2', 'autoL3', 'autoL4', 'L1', 'L2', 'L3', 'L4', 'autoRemoveAlgae', 'defensivePins', 'netScore', 'processorScore', 'removeAlgae'];
-    const totals: Record<string, number> = {};
-    const counts: Record<string, number> = {};
-    let deepClimbCount = 0;
-    let totalMatches = 0;
-
-    // Initialize totals and counts
-    valuesToCompute.forEach((key) => {
-      totals[key] = 0;
-      counts[key] = 0;
-    });
-
-    // Iterate through all matches
-    Object.keys(scoutingData).forEach((matchKey) => {
-      if (matchKey.includes(`T${teamId}`)) {
-        const matchData = scoutingData[matchKey];
-        totalMatches++;
-
-        // Count deep climbs
-        if (matchData.climbOption === 'DEEP') {
-          deepClimbCount++;
+        if (!snapshot.exists()) {
+            console.error('No scouting data found.');
+            return;
         }
 
+        const scoutingData = snapshot.val();
+        const valuesToCompute = ['autoL1', 'autoL2', 'autoL3', 'autoL4', 'L1', 'L2', 'L3', 'L4', 'autoRemoveAlgae', 'defensivePins', 'netScore', 'processorScore', 'removeAlgae'];
+        const totals: Record<string, number> = {};
+        const counts: Record<string, number> = {};
+        let deepClimbCount = 0;
+        let totalMatches = 0;
+        let consistentMatches = 0;
+        let defensivePinsTotal = 0;
+        let defensivePinsCount = 0;
+
+        // Initialize totals and counts
         valuesToCompute.forEach((key) => {
-          if (matchData[key] !== undefined && typeof matchData[key] === 'number') {
-            totals[key] += matchData[key];
-            counts[key]++;
-          }
+            totals[key] = 0;
+            counts[key] = 0;
         });
-      }
-    });
 
-    // Calculate averages and store in Firebase
-    const teamAverageRef = ref(db, `processedData/${teamId}`);
-    const averages: Record<string, number> = {};
 
-    valuesToCompute.forEach((key) => {
-      if (counts[key] > 0) {
-        averages[key] = totals[key] / counts[key];
-      } else {
-        console.warn(`No matches found for team ${teamId} with ${key} data.`);
-        averages[key] = 0; // Default to 0 if no data is found
-      }
-    });
+        // Iterate through all matches
+        Object.keys(scoutingData).forEach((matchKey) => {
+            if (matchKey.includes(`T${teamId}`)) {
+                const matchData = scoutingData[matchKey];
+                totalMatches++;
 
-    // Calculate climb rate
-    const climbRate = totalMatches > 0 ? (deepClimbCount / totalMatches) * 100 : 0;
-    averages['climbRate'] = climbRate;
+                // Count deep climbs
+                if (matchData.climbOption === 'DEEP') {
+                    deepClimbCount++;
+                }
 
-    await set(teamAverageRef, averages);
+                // Count consistent matches (e.g., netScore > 50 as a threshold)
+                if (
+                    matchData.autoL4 * 7 +
+                    matchData.autoL3 * 6 +
+                    matchData.autoL2 * 4 +
+                    matchData.autoL1 * 3 +
+                    3 +
+                    matchData.autoL4 * 5 +
+                    matchData.autoL3 * 4 +
+                    matchData.autoL2 * 3 +
+                    matchData.autoL1 * 2 +
+                    matchData.netScore * 4 +
+                    matchData.netScore * 4 +
+                    matchData.processorScore * 6 > 40
+                ) {
+                    consistentMatches++;
+                }
 
-    console.log(`Averages and climb rate for team ${teamId} successfully calculated and stored:`, averages);
-  } catch (error) {
-    console.error('Error calculating and storing averages and climb rate:', error);
-  }
+                // Process defensive pins
+                if (matchData.defensivePins !== undefined && typeof matchData.defensivePins === 'number') {
+                    defensivePinsTotal += matchData.defensivePins;
+                    defensivePinsCount++;
+                }
+
+                valuesToCompute.forEach((key) => {
+                    if (matchData[key] !== undefined && typeof matchData[key] === 'number') {
+                        totals[key] += matchData[key];
+                        counts[key]++;
+                    }
+                });
+            }
+        });
+
+
+        // Calculate averages and store in Firebase
+        const teamAverageRef = ref(db, `processedData/${teamId}`);
+        const averages: Record<string, number> = {};
+
+
+        valuesToCompute.forEach((key) => {
+            if (counts[key] > 0) {
+                averages[key] = totals[key] / counts[key];
+            } else {
+                console.warn(`No matches found for team ${teamId} with ${key} data.`);
+                averages[key] = 0; // Default to 0 if no data is found
+            }
+        });
+
+        Object.keys(scoutingData).forEach(async (matchKey) => {
+            if (matchKey.includes(`T${teamId}`)) {
+                const matchData = scoutingData[matchKey];
+                totalMatches++;
+
+                // Calculate scores separately
+                const autoScore = matchData.autoL4 * 7 +
+                    matchData.autoL3 * 6 +
+                    matchData.autoL2 * 4 +
+                    matchData.autoL1 * 3 +
+                    3;
+
+                const teleopScore = matchData.autoL4 * 5 +
+                    matchData.autoL3 * 4 +
+                    matchData.autoL2 * 3 +
+                    matchData.autoL1 * 2 +
+                    matchData.netScore * 4 +
+                    matchData.processorScore * 6;
+
+                let endgameScore = 0;
+                if (matchData.climbOption === 'DEEP') {
+                    endgameScore = 12;
+                } else if (matchData.climbOption === 'SHALLOW') {
+                    endgameScore = 6;
+                } else if (matchData.climbOption === 'PARKED') {
+                    endgameScore = 2;
+                }
+
+                const matchScoreRef = ref(db, `processedData/${teamId}matches//${matchKey}`);
+                console.log(`Writing to path: processedData/${teamId}/matches/${matchKey}`);
+                try {
+                    // Store scores separately in Firebase
+                    await set(matchScoreRef, {
+                        autoScore,
+                        teleopScore,
+                        endgameScore,
+                        totalScore: autoScore + teleopScore + endgameScore,
+                    });
+                    console.log(`Scores for match ${matchKey} successfully stored in Firebase.`);
+                } catch (error) {
+                    console.error(`Failed to store scores for match ${matchKey}:`, error);
+                }
+            }
+        });
+
+        averages['matchesPlayed'] = totalMatches;
+
+        // Store averages in Firebase
+        await set(teamAverageRef, averages);
+
+        console.log(`Averages, matches played, consistency rate, and defense rating for team ${teamId} successfully calculated and stored:`, averages);
+
+        // Calculate climb rate
+        const climbRate = totalMatches > 0 ? (deepClimbCount / totalMatches) * 100 : 0;
+        averages['climbRate'] = climbRate;
+
+        // Calculate consistency rate
+        const consistencyRate = totalMatches > 0 ? (consistentMatches / totalMatches) * 100 : 0;
+        averages['consistencyRate'] = consistencyRate;
+
+        // Calculate defense rating
+        if (defensivePinsCount >= 3) {
+            averages['defenseRating'] = defensivePinsTotal / defensivePinsCount;
+        } else {
+            console.warn(`Not enough defensive pins data for team ${teamId}.`);
+            averages['defenseRating'] = 0; // Default to 0 if insufficient data
+        }
+
+        await set(teamAverageRef, averages);
+
+        console.log(`Averages, consistency rate, and defense rating for team ${teamId} successfully calculated and stored:`, averages);
+    } catch (error) {
+        console.error('Error calculating and storing averages, consistency rate, and defense rating:', error);
+    }
+
+
+};
+
+export const getTBAStats = async (teamId: number): Promise<void> => {
+    try {
+        const response = await axios.get(`${TBA_API_BASE_URL}/event/${TBA_EVENT_KEY}/oprs`, {
+            headers: {
+                'X-TBA-Auth-Key': TBA_API_KEY,
+            },
+        });
+
+        const data = response.data;
+
+        if (data.oprs && data.dprs) {
+            const opr = data.oprs[`frc${teamId}`] || 0;
+            const dpr = data.dprs[`frc${teamId}`] || 0;
+
+            console.log(`OPR: ${opr}, DPR: ${dpr} for team ${teamId} in competition ${TBA_EVENT_KEY}`);
+
+            // Update OPR and DPR in Firebase without overwriting other fields
+            const db = getDatabase();
+            const teamStatsRef = ref(db, `processedData/${teamId}`);
+            await update(teamStatsRef, {opr, dpr});
+
+            console.log(`OPR and DPR for team ${teamId} successfully updated in Firebase.`);
+        } else {
+            console.error('OPR or DPR data not found in the response.');
+        }
+    } catch (error) {
+        console.error('Error fetching or updating TBA stats:', error);
+    }
 };

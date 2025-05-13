@@ -11,7 +11,7 @@ const TeamAnalysis: React.FC = () => {
   
   // This would typically come from Firebase
   const teams = [
-    { teamNumber: 254, teamName: 'The Cheesy Poofs' },
+    { teamNumber: 1690, teamName: 'Orbit' },
     { teamNumber: 1114, teamName: 'Simbotics' },
     { teamNumber: 118, teamName: 'Robonauts' },
     { teamNumber: 2056, teamName: 'OP Robotics' },

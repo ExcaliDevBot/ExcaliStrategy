@@ -5,7 +5,7 @@ import TeamMatches from '../components/TeamMatches';
 import UpcomingMatches from '../components/UpcomingMatches';
 import {ArrowUp, Target, Users, Clock} from 'lucide-react';
 import {getDatabase, ref, onValue} from '../firebase/firebase';
-import {calculateAndStoreAverages} from '../../functions/src';
+import {calculateAndStoreAverages, getTBAStats} from '../../functions/src';
 
 const Dashboard: React.FC = () => {
     const [teamRanking, setTeamRanking] = useState<string | null>('Loading...');
@@ -180,6 +180,7 @@ const Dashboard: React.FC = () => {
                 onClick={async () => {
                     const teamId = 1690; // Replace with the actual team ID
                     await calculateAndStoreAverages(teamId);
+                    await getTBAStats(teamId);
                 }}
             >
                 Click Me
