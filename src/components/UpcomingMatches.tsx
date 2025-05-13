@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getDatabase, ref, onValue } from '../firebase/firebase';
+import { getDatabase, ref, onValue } from '../firebase/firebase.js';
 
 interface Match {
     number: number;

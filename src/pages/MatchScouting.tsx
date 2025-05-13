@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getDatabase, ref, onValue } from '../firebase/firebase';
+import { getDatabase, ref, onValue } from '../firebase/firebase.js';
 
 const MatchScouting: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');

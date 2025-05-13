@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {TrendingUp, TrendingDown, ArrowRightFromLine } from 'lucide-react';
-import {getDatabase, ref, get} from '../../firebase/firebase';
+import {getDatabase, ref, get} from '../../firebase/firebase.js';
 
 interface TeamStatsTableProps {
     teamNumber: number;
@@ -68,14 +68,14 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({teamNumber}) => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Average Auto Score</div>
-                    <div className="text-xl font-semibold">{stats.autoL4 * 7 +
-                        stats.autoL3 * 6 + stats.autoL2 * 4 + stats.autoL1 * 3 + 3}</div>
+                    <div className="text-xl font-semibold">{Math.round(stats.autoL4 * 7 +
+                        stats.autoL3 * 6 + stats.autoL2 * 4 + stats.autoL1 * 3) + 3}</div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Average Teleop Score</div>
-                    <div className="text-xl font-semibold">{stats.autoL4 * 5 +
+                    <div className="text-xl font-semibold">{Math.round(stats.autoL4 * 5 +
                         stats.autoL3 * 4 + stats.autoL2 * 3 + stats.autoL1 * 2 + stats.netScore * 4 +
-                        stats.netScore * 4 + stats.processorScore * 6}</div>
+                        stats.netScore * 4 + stats.processorScore * 6)}</div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Average Endgame Score</div>
@@ -83,18 +83,18 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({teamNumber}) => {
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Average Total Score</div>
-                    <div className="text-xl font-semibold">{stats.autoL4 * 7 +
+                    <div className="text-xl font-semibold">{Math.round(stats.autoL4 * 7 +
                         stats.autoL3 * 6 + stats.autoL2 * 4 + stats.autoL1 * 3 + 3 + stats.autoL4 * 5 +
                         stats.autoL3 * 4 + stats.autoL2 * 3 + stats.autoL1 * 2 + stats.netScore * 4 +
-                        stats.netScore * 4 + stats.processorScore * 6 + stats.climbRate * 0.12}</div>
+                        stats.netScore * 4 + stats.processorScore * 6 + stats.climbRate * 0.12)}</div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Climb Success Rate</div>
-                    <div className="text-xl font-semibold">{stats.climbRate}%</div>
+                    <div className="text-xl font-semibold">{Math.round(stats.climbRate)}%</div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Consistency Rating</div>
-                    <div className="text-xl font-semibold">{stats.consistencyRate / 10}/10</div>
+                    <div className="text-xl font-semibold">{Math.round(stats.consistencyRate) / 10}/10</div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Defense Rating</div>
@@ -104,7 +104,7 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({teamNumber}) => {
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Matches Played</div>
-                    <div className="text-xl font-semibold">{stats.matchesPlayed / 2}</div>
+                    <div className="text-xl font-semibold">{stats.matchesPlayed}</div>
                 </div>
             </div>
 

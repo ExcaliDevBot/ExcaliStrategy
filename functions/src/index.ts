@@ -1,4 +1,4 @@
-import {getDatabase, ref, get, set, update} from '../../src/firebase/firebase';
+import { getDatabase, ref, get, set, update } from '../../src/firebase/firebase.js';
 import axios from 'axios';
 
 const TBA_API_BASE_URL = 'https://www.thebluealliance.com/api/v3';
@@ -32,7 +32,6 @@ export const calculateAndStoreAverages = async (teamId: number): Promise<void> =
             counts[key] = 0;
         });
 
-
         // Iterate through all matches
         Object.keys(scoutingData).forEach((matchKey) => {
             if (matchKey.includes(`T${teamId}`)) {
@@ -44,21 +43,9 @@ export const calculateAndStoreAverages = async (teamId: number): Promise<void> =
                     deepClimbCount++;
                 }
 
-                // Count consistent matches (e.g., netScore > 50 as a threshold)
-                if (
-                    matchData.autoL4 * 7 +
-                    matchData.autoL3 * 6 +
-                    matchData.autoL2 * 4 +
-                    matchData.autoL1 * 3 +
-                    3 +
-                    matchData.autoL4 * 5 +
-                    matchData.autoL3 * 4 +
-                    matchData.autoL2 * 3 +
-                    matchData.autoL1 * 2 +
-                    matchData.netScore * 4 +
-                    matchData.netScore * 4 +
-                    matchData.processorScore * 6 > 40
-                ) {
+                // Count consistent matches
+                const totalScore = calculateTotalScore(matchData);
+                if (totalScore > 40) {
                     consistentMatches++;
                 }
 
@@ -72,16 +59,16 @@ export const calculateAndStoreAverages = async (teamId: number): Promise<void> =
                     if (matchData[key] !== undefined && typeof matchData[key] === 'number') {
                         totals[key] += matchData[key];
                         counts[key]++;
+                    } else {
+                        console.warn(`No valid data for ${key} in match ${matchKey}`);
                     }
                 });
             }
         });
 
-
         // Calculate averages and store in Firebase
         const teamAverageRef = ref(db, `processedData/${teamId}`);
         const averages: Record<string, number> = {};
-
 
         valuesToCompute.forEach((key) => {
             if (counts[key] > 0) {
@@ -89,51 +76,6 @@ export const calculateAndStoreAverages = async (teamId: number): Promise<void> =
             } else {
                 console.warn(`No matches found for team ${teamId} with ${key} data.`);
                 averages[key] = 0; // Default to 0 if no data is found
-            }
-        });
-
-        Object.keys(scoutingData).forEach(async (matchKey) => {
-            if (matchKey.includes(`T${teamId}`)) {
-                const matchData = scoutingData[matchKey];
-                totalMatches++;
-
-                // Calculate scores separately
-                const autoScore = matchData.autoL4 * 7 +
-                    matchData.autoL3 * 6 +
-                    matchData.autoL2 * 4 +
-                    matchData.autoL1 * 3 +
-                    3;
-
-                const teleopScore = matchData.autoL4 * 5 +
-                    matchData.autoL3 * 4 +
-                    matchData.autoL2 * 3 +
-                    matchData.autoL1 * 2 +
-                    matchData.netScore * 4 +
-                    matchData.processorScore * 6;
-
-                let endgameScore = 0;
-                if (matchData.climbOption === 'DEEP') {
-                    endgameScore = 12;
-                } else if (matchData.climbOption === 'SHALLOW') {
-                    endgameScore = 6;
-                } else if (matchData.climbOption === 'PARKED') {
-                    endgameScore = 2;
-                }
-
-                const matchScoreRef = ref(db, `processedData/${teamId}matches//${matchKey}`);
-                console.log(`Writing to path: processedData/${teamId}/matches/${matchKey}`);
-                try {
-                    // Store scores separately in Firebase
-                    await set(matchScoreRef, {
-                        autoScore,
-                        teleopScore,
-                        endgameScore,
-                        totalScore: autoScore + teleopScore + endgameScore,
-                    });
-                    console.log(`Scores for match ${matchKey} successfully stored in Firebase.`);
-                } catch (error) {
-                    console.error(`Failed to store scores for match ${matchKey}:`, error);
-                }
             }
         });
 
@@ -163,11 +105,66 @@ export const calculateAndStoreAverages = async (teamId: number): Promise<void> =
         await set(teamAverageRef, averages);
 
         console.log(`Averages, consistency rate, and defense rating for team ${teamId} successfully calculated and stored:`, averages);
+
+        // Store match scores
+        await storeMatchScores(teamId, scoutingData);
+
+        // Calculate performance trend
+        await calculatePerformanceTrend(teamId);
     } catch (error) {
         console.error('Error calculating and storing averages, consistency rate, and defense rating:', error);
     }
+};
 
+const calculateTotalScore = (matchData: any): number => {
+    const autoScore = (matchData.autoL4 || 0) * 7 +
+        (matchData.autoL3 || 0) * 6 +
+        (matchData.autoL2 || 0) * 4 +
+        (matchData.autoL1 || 0) * 3 +
+        3;
 
+    const teleopScore = (matchData.autoL4 || 0) * 5 +
+        (matchData.autoL3 || 0) * 4 +
+        (matchData.autoL2 || 0) * 3 +
+        (matchData.autoL1 || 0) * 2 +
+        (matchData.netScore || 0) * 4 +
+        (matchData.processorScore || 0) * 6;
+
+    let endgameScore = 0;
+    if (matchData.climbOption === 'DEEP') {
+        endgameScore = 12;
+    } else if (matchData.climbOption === 'SHALLOW') {
+        endgameScore = 6;
+    } else if (matchData.climbOption === 'PARKED') {
+        endgameScore = 2;
+    }
+
+    return autoScore + teleopScore + endgameScore;
+};
+
+const storeMatchScores = async (teamId: number, scoutingData: any): Promise<void> => {
+    const db = getDatabase();
+
+    for (const matchKey of Object.keys(scoutingData)) {
+        if (matchKey.includes(`T${teamId}`)) {
+            const matchData = scoutingData[matchKey];
+            const totalScore = calculateTotalScore(matchData);
+
+            const matchScoreRef = ref(db, `processedData/${teamId}matches/${matchKey}`);
+            console.log(`Writing to path: processedData/${teamId}matches/${matchKey}`);
+            try {
+                await set(matchScoreRef, {
+                    autoScore: totalScore,
+                    teleopScore: totalScore,
+                    endgameScore: totalScore,
+                    totalScore,
+                });
+                console.log(`Scores for match ${matchKey} successfully stored in Firebase.`);
+            } catch (error) {
+                console.error(`Failed to store scores for match ${matchKey}:`, error);
+            }
+        }
+    }
 };
 
 export const getTBAStats = async (teamId: number): Promise<void> => {
@@ -186,10 +183,9 @@ export const getTBAStats = async (teamId: number): Promise<void> => {
 
             console.log(`OPR: ${opr}, DPR: ${dpr} for team ${teamId} in competition ${TBA_EVENT_KEY}`);
 
-            // Update OPR and DPR in Firebase without overwriting other fields
             const db = getDatabase();
             const teamStatsRef = ref(db, `processedData/${teamId}`);
-            await update(teamStatsRef, {opr, dpr});
+            await update(teamStatsRef, { opr, dpr });
 
             console.log(`OPR and DPR for team ${teamId} successfully updated in Firebase.`);
         } else {
@@ -214,38 +210,14 @@ export const calculatePerformanceTrend = async (teamId: number): Promise<void> =
         const scoutingData = snapshot.val();
         const matchScores: number[] = [];
 
-        // Calculate total scores for each match
         Object.keys(scoutingData).forEach((matchKey) => {
             if (matchKey.includes(`T${teamId}`)) {
                 const matchData = scoutingData[matchKey];
-                const autoScore = matchData.autoL4 * 7 +
-                    matchData.autoL3 * 6 +
-                    matchData.autoL2 * 4 +
-                    matchData.autoL1 * 3 +
-                    3;
-
-                const teleopScore = matchData.autoL4 * 5 +
-                    matchData.autoL3 * 4 +
-                    matchData.autoL2 * 3 +
-                    matchData.autoL1 * 2 +
-                    matchData.netScore * 4 +
-                    matchData.processorScore * 6;
-
-                let endgameScore = 0;
-                if (matchData.climbOption === 'DEEP') {
-                    endgameScore = 12;
-                } else if (matchData.climbOption === 'SHALLOW') {
-                    endgameScore = 6;
-                } else if (matchData.climbOption === 'PARKED') {
-                    endgameScore = 2;
-                }
-
-                const totalScore = autoScore + teleopScore + endgameScore;
+                const totalScore = calculateTotalScore(matchData);
                 matchScores.push(totalScore);
             }
         });
 
-        // Determine the trend
         let trend = 'stable';
         if (matchScores.length > 1) {
             const differences = matchScores.slice(1).map((score, i) => score - matchScores[i]);
@@ -259,7 +231,6 @@ export const calculatePerformanceTrend = async (teamId: number): Promise<void> =
             }
         }
 
-        // Store the trend in Firebase
         const teamTrendRef = ref(db, `processedData/${teamId}/performanceTrend`);
         await set(teamTrendRef, trend);
 

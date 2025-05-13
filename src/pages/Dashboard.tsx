@@ -4,7 +4,7 @@ import EventSchedule from '../components/EventSchedule';
 import TeamMatches from '../components/TeamMatches';
 import UpcomingMatches from '../components/UpcomingMatches';
 import {ArrowUp, Target, Users, Clock} from 'lucide-react';
-import {getDatabase, ref, onValue} from '../firebase/firebase';
+import {getDatabase, ref, onValue} from '../firebase/firebase.js';
 import {calculateAndStoreAverages, calculatePerformanceTrend, getTBAStats} from '../../functions/src';
 
 const Dashboard: React.FC = () => {
@@ -178,7 +178,7 @@ const Dashboard: React.FC = () => {
             <button
                 className="mt-4 px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600"
                 onClick={async () => {
-                    const teamId = 1690; // Replace with the actual team ID
+                    const teamId = 6738; // Replace with the actual team ID
                     await calculateAndStoreAverages(teamId);
                     await getTBAStats(teamId);
                     await calculatePerformanceTrend(teamId);
