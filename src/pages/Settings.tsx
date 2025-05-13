@@ -16,7 +16,7 @@ interface SettingsForm {
 const initialSettings: SettingsForm = {
   teamNumber: '6738',
   teamName: 'Excalibur',
-  eventKey: '2025new',
+  eventKey: '2025iscmp',
   dataRefreshRate: '60',
   enableNotifications: true,
   autoBackup: true,

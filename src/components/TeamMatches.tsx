@@ -66,7 +66,7 @@ const TeamMatches: React.FC = () => {
     }, [teamNumber, eventKey]);
     return (
         <div className="p-4 bg-white rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-neutral-800 mb-3">Team {teamNumber} Matches</h2>
+            <h2 className="text-xl font-semibold text-neutral-800 mb-3">6738 Match Schedule</h2>
 
             {loading ? (
                 <p className="text-neutral-500">Loading matches...</p>

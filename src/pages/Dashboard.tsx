@@ -175,17 +175,6 @@ const Dashboard: React.FC = () => {
                     <UpcomingMatches/>
                 </div>
             </div>
-            <button
-                className="mt-4 px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600"
-                onClick={async () => {
-                    const teamId = 6738; // Replace with the actual team ID
-                    await calculateAndStoreAverages(teamId);
-                    await getTBAStats(teamId);
-                    await calculatePerformanceTrend(teamId);
-                }}
-            >
-                Click Me
-            </button>
             <div className="bg-white rounded-lg shadow-sm p-4">
                 <h2 className="text-lg font-semibold mb-4">Event Schedule</h2>
                 <EventSchedule/>

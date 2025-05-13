@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { getDatabase, ref, onValue } from '../firebase/firebase.js';
+import React, {useEffect, useState} from 'react';
+import {getDatabase, ref, onValue} from '../firebase/firebase.js';
 
 interface Match {
     number: number;
@@ -7,6 +7,15 @@ interface Match {
     red: string[];
     blue: string[];
     yourTeam: boolean;
+}
+
+interface MatchData {
+    match_number: number;
+    time?: number;
+    alliances: {
+        red: { team_keys: string[] };
+        blue: { team_keys: string[] };
+    };
 }
 
 const UpcomingMatches: React.FC = () => {
@@ -33,12 +42,12 @@ const UpcomingMatches: React.FC = () => {
         fetchCurrentMatch();
     }, []);
 
-    const startMatch = 12;
-    const matchesToShow = 6;
+    const startMatch = 48;
+    const matchesToShow = 7;
 
     useEffect(() => {
         const fetchMatches = async () => {
-            const eventKey = localStorage.getItem('eventKey') || '2025isde4';
+            const eventKey = localStorage.getItem('eventKey') || '2025iscmp';
             const apiKey = 'DGOg0BIAQjm8EO3EkO50txFeLxpklBtotoW9qnHxUzoeecJIlRzOz8CsgNjZ4fyO';
 
             try {
@@ -57,21 +66,23 @@ const UpcomingMatches: React.FC = () => {
 
                 const data = await response.json();
                 const formattedMatches = data
-                    .filter((match: { match_number: number }) => match.match_number)
-                    .map((match: unknown) => ({
+                    .filter((match: MatchData) => match.match_number)
+                    .map((match: MatchData) => ({
                         number: match.match_number,
                         time: match.time
-                            ? new Date(match.time * 1000).toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                              })
+                            ? new Date(match.time * 1000).toISOString()
                             : 'TBD',
                         red: match.alliances.red.team_keys.map((team: string) => team.replace('frc', '')),
                         blue: match.alliances.blue.team_keys.map((team: string) => team.replace('frc', '')),
                         yourTeam:
                             match.alliances.red.team_keys.includes('frc6738') ||
                             match.alliances.blue.team_keys.includes('frc6738'),
-                    }));
+                    }))
+                    .sort((a, b) => {
+                        if (a.time === 'TBD') return 1; // Place TBD matches at the end
+                        if (b.time === 'TBD') return -1;
+                        return new Date(a.time).getTime() - new Date(b.time).getTime();
+                    });
 
                 setMatchesData(formattedMatches);
             } catch (error) {
@@ -103,8 +114,11 @@ const UpcomingMatches: React.FC = () => {
                 >
                     <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">Match {match.number}</span>
-                        <span className="text-sm text-neutral-500">{match.time}</span>
-                    </div>
+                        <span className="text-sm text-neutral-500">
+    {match.time !== 'TBD'
+        ? new Date(match.time).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+        : 'TBD'}
+</span></div>
 
                     <div className="flex">
                         <div className="w-1/2 pr-2">
