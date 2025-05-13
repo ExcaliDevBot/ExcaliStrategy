@@ -111,7 +111,7 @@ const TeamAnalysis: React.FC = () => {
               <div className="p-4">
                 {selectedTab === 'performance' ? (
                   <div className="space-y-6">
-                    <TeamStatsTable teamNumber={selectedTeam} />
+                    <TeamStatsTable teamNumber={1690} />
                     <TeamPerformanceChart teamNumber={selectedTeam} />
                   </div>
                 ) : (

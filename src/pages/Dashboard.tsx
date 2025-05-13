@@ -5,6 +5,7 @@ import TeamMatches from '../components/TeamMatches';
 import UpcomingMatches from '../components/UpcomingMatches';
 import {ArrowUp, Target, Users, Clock} from 'lucide-react';
 import {getDatabase, ref, onValue} from '../firebase/firebase';
+import {calculateAndStoreAverages} from '../../functions/src';
 
 const Dashboard: React.FC = () => {
     const [teamRanking, setTeamRanking] = useState<string | null>('Loading...');
@@ -174,7 +175,15 @@ const Dashboard: React.FC = () => {
                     <UpcomingMatches/>
                 </div>
             </div>
-
+            <button
+                className="mt-4 px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600"
+                onClick={async () => {
+                    const teamId = 1690; // Replace with the actual team ID
+                    await calculateAndStoreAverages(teamId);
+                }}
+            >
+                Click Me
+            </button>
             <div className="bg-white rounded-lg shadow-sm p-4">
                 <h2 className="text-lg font-semibold mb-4">Event Schedule</h2>
                 <EventSchedule/>
