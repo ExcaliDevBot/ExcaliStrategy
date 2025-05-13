@@ -199,3 +199,72 @@ export const getTBAStats = async (teamId: number): Promise<void> => {
         console.error('Error fetching or updating TBA stats:', error);
     }
 };
+
+export const calculatePerformanceTrend = async (teamId: number): Promise<void> => {
+    try {
+        const db = getDatabase();
+        const scoutingDataRef = ref(db, 'scoutingData');
+        const snapshot = await get(scoutingDataRef);
+
+        if (!snapshot.exists()) {
+            console.error('No scouting data found.');
+            return;
+        }
+
+        const scoutingData = snapshot.val();
+        const matchScores: number[] = [];
+
+        // Calculate total scores for each match
+        Object.keys(scoutingData).forEach((matchKey) => {
+            if (matchKey.includes(`T${teamId}`)) {
+                const matchData = scoutingData[matchKey];
+                const autoScore = matchData.autoL4 * 7 +
+                    matchData.autoL3 * 6 +
+                    matchData.autoL2 * 4 +
+                    matchData.autoL1 * 3 +
+                    3;
+
+                const teleopScore = matchData.autoL4 * 5 +
+                    matchData.autoL3 * 4 +
+                    matchData.autoL2 * 3 +
+                    matchData.autoL1 * 2 +
+                    matchData.netScore * 4 +
+                    matchData.processorScore * 6;
+
+                let endgameScore = 0;
+                if (matchData.climbOption === 'DEEP') {
+                    endgameScore = 12;
+                } else if (matchData.climbOption === 'SHALLOW') {
+                    endgameScore = 6;
+                } else if (matchData.climbOption === 'PARKED') {
+                    endgameScore = 2;
+                }
+
+                const totalScore = autoScore + teleopScore + endgameScore;
+                matchScores.push(totalScore);
+            }
+        });
+
+        // Determine the trend
+        let trend = 'stable';
+        if (matchScores.length > 1) {
+            const differences = matchScores.slice(1).map((score, i) => score - matchScores[i]);
+            const allPositive = differences.every((diff) => diff > 0);
+            const allNegative = differences.every((diff) => diff < 0);
+
+            if (allPositive) {
+                trend = 'upward';
+            } else if (allNegative) {
+                trend = 'downward';
+            }
+        }
+
+        // Store the trend in Firebase
+        const teamTrendRef = ref(db, `processedData/${teamId}/performanceTrend`);
+        await set(teamTrendRef, trend);
+
+        console.log(`Performance trend for team ${teamId} successfully calculated and stored: ${trend}`);
+    } catch (error) {
+        console.error('Error calculating and storing performance trend:', error);
+    }
+};
