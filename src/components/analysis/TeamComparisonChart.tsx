@@ -15,12 +15,12 @@ const generateMockComparisonData = (selectedTeamNumber: number) => {
       color: '#012265',
     },
     { 
-      teamNumber: 148, // Your team
+      teamNumber: 6738, // Your team
       name: 'Your Team',
       color: '#d4af37',
     },
     { 
-      teamNumber: 254, // Top team
+      teamNumber: 1690, // Top team
       name: 'Top Ranked Team',
       color: '#10B981',
     }
@@ -30,7 +30,7 @@ const generateMockComparisonData = (selectedTeamNumber: number) => {
   
   const categories = [
     { name: 'Auto', fullMark: 100 },
-    { name: 'Teleop', fullMark: 100 },
+    { name: 'Teleop', fullMark: 20 },
     { name: 'Endgame', fullMark: 100 },
     { name: 'Defense', fullMark: 100 },
     { name: 'Driver Skill', fullMark: 100 },
@@ -61,7 +61,7 @@ const generateMockComparisonData = (selectedTeamNumber: number) => {
             baseScore = 50 + teamSeed * 5;
             break;
           case 'Driver Skill':
-            baseScore = 70 + teamSeed * 3;
+            baseScore = 1 + teamSeed * 3;
             break;
           case 'Consistency':
             baseScore = 55 + teamSeed * 4.5;

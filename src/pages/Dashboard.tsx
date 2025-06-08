@@ -4,8 +4,8 @@ import EventSchedule from '../components/EventSchedule';
 import TeamMatches from '../components/TeamMatches';
 import UpcomingMatches from '../components/UpcomingMatches';
 import {ArrowUp, Target, Users, Clock} from 'lucide-react';
+// @ts-ignore: Ignore missing type declaration for Firebase module
 import {getDatabase, ref, onValue} from '../firebase/firebase.js';
-import {calculateAndStoreAverages, calculatePerformanceTrend, getTBAStats} from '../../functions/src';
 
 const Dashboard: React.FC = () => {
     const [teamRanking, setTeamRanking] = useState<string | null>('Loading...');
@@ -18,15 +18,26 @@ const Dashboard: React.FC = () => {
             const db = getDatabase();
             const matchesRef = ref(db, 'matches');
 
-            onValue(matchesRef, (snapshot) => {
+            onValue(matchesRef, (snapshot: any) => {
                 const matches = snapshot.val();
                 if (matches) {
                     const matchArray = Object.values(matches);
+                    type Match = {
+                        alliances: {
+                            red: string[];
+                            blue: string[];
+                            red_score: number;
+                            blue_score: number;
+                        };
+                        match_number: number;
+                    };
+
                     const lastMatch = matchArray
-                        .filter((match: any) =>
-                            match.alliances.red.includes('6738') || match.alliances.blue.includes('6738')
+                        .filter((match: Match) => {
+                                return match.alliances.red.includes('6738') || match.alliances.blue.includes('6738');
+                            }
                         )
-                        .sort((a: any, b: any) => b.match_number - a.match_number)[0];
+                        .sort((a: Match, b: Match) => b.match_number - a.match_number)[0];
 
                     if (lastMatch) {
                         const isRedAlliance = lastMatch.alliances.red.includes('6738');
@@ -40,7 +51,7 @@ const Dashboard: React.FC = () => {
                 } else {
                     setQualificationScore('No matches data available.');
                 }
-            }, (error) => {
+            }, (error: any) => {
                 console.error('Error fetching matches:', error);
                 setQualificationScore('Error');
             });
@@ -85,7 +96,7 @@ const Dashboard: React.FC = () => {
                 } else {
                     setTeamRanking('Team 6738 not found in rankings.');
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error fetching team ranking:', error);
                 setTeamRanking('Error fetching ranking.');
             }
@@ -99,10 +110,10 @@ const Dashboard: React.FC = () => {
             const db = getDatabase();
             const scoutingStatsRef = ref(db, 'scoutingStats/sentForms');
 
-            onValue(scoutingStatsRef, (snapshot) => {
+            onValue(scoutingStatsRef, (snapshot: any) => {
                 const value = snapshot.val();
-                setMatchesScouted(value ? value.toString() : '0');
-            }, (error) => {
+                setMatchesScouted(value ? value.toString() : '0' as string | number);
+            }, (error: any) => {
                 console.error('Error fetching matches scouted:', error);
                 setMatchesScouted('Error');
             });
@@ -116,10 +127,10 @@ const Dashboard: React.FC = () => {
             const db = getDatabase();
             const scoutingStatsRef = ref(db, 'scoutingStats/accuracy');
 
-            onValue(scoutingStatsRef, (snapshot) => {
+            onValue(scoutingStatsRef, (snapshot: any) => {
                 const value = snapshot.val();
-                setAccuracy(value ? value.toString() : '0');
-            }, (error) => {
+                setAccuracy(value ? value.toString() : '0' as string | number);
+            }, (error: any) => {
                 console.error('Error fetching accuracy:', error);
                 setAccuracy('Error');
             });

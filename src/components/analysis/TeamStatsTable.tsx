@@ -1,13 +1,31 @@
-import React, {useEffect, useState} from 'react';
-import {TrendingUp, TrendingDown, ArrowRightFromLine } from 'lucide-react';
-import {getDatabase, ref, get} from '../../firebase/firebase.js';
+import React, { useEffect, useState } from 'react';
+import { TrendingUp, TrendingDown, ArrowRightFromLine } from 'lucide-react';
+// @ts-expect-error: Ignore missing type declaration for Firebase module
+import { getDatabase, ref, get } from '../../firebase/firebase.js';
+
+interface TeamStats {
+    performanceTrend: 'upward' | 'stable' | 'downward';
+    autoL4: number;
+    autoL3: number;
+    autoL2: number;
+    autoL1: number;
+    netScore: number;
+    processorScore: number;
+    climbRate: number;
+    consistencyRate: number;
+    defenseRating: number;
+    matchesPlayed: number;
+    opr: number;
+    dpr: number;
+    ccwm: number;
+}
 
 interface TeamStatsTableProps {
     teamNumber: number;
 }
 
-const TeamStatsTable: React.FC<TeamStatsTableProps> = ({teamNumber}) => {
-    const [stats, setStats] = useState<any | null>(null);
+const TeamStatsTable: React.FC<TeamStatsTableProps> = ({ teamNumber }) => {
+    const [stats, setStats] = useState<TeamStats | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -18,7 +36,7 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({teamNumber}) => {
                 const snapshot = await get(statsRef);
 
                 if (snapshot.exists()) {
-                    setStats(snapshot.val());
+                    setStats(snapshot.val() as TeamStats);
                 } else {
                     console.error('No data available for the team.');
                 }
@@ -48,17 +66,17 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({teamNumber}) => {
                     <span className="text-neutral-500 mr-2">Performance Trend:</span>
                     {stats.performanceTrend === 'upward' ? (
                         <div className="flex items-center text-success">
-                            <TrendingUp size={16} className="mr-1"/>
+                            <TrendingUp size={16} className="mr-1" />
                             <span>Improving</span>
                         </div>
                     ) : stats.performanceTrend === 'stable' ? (
                         <div className="flex items-center text-warning">
-                            <ArrowRightFromLine  size={16} className="mr-1"/>
+                            <ArrowRightFromLine size={16} className="mr-1" />
                             <span>Stable</span>
                         </div>
                     ) : (
                         <div className="flex items-center text-error">
-                            <TrendingDown size={16} className="mr-1"/>
+                            <TrendingDown size={16} className="mr-1" />
                             <span>Declining</span>
                         </div>
                     )}
@@ -68,14 +86,22 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({teamNumber}) => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Average Auto Score</div>
-                    <div className="text-xl font-semibold">{Math.round(stats.autoL4 * 7 +
-                        stats.autoL3 * 6 + stats.autoL2 * 4 + stats.autoL1 * 3) + 3}</div>
+                    <div className="text-xl font-semibold">
+                        {Math.round(stats.autoL4 * 7 + stats.autoL3 * 6 + stats.autoL2 * 4 + stats.autoL1 * 3) + 3}
+                    </div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Average Teleop Score</div>
-                    <div className="text-xl font-semibold">{Math.round(stats.autoL4 * 5 +
-                        stats.autoL3 * 4 + stats.autoL2 * 3 + stats.autoL1 * 2 + stats.netScore * 4 +
-                        stats.netScore * 4 + stats.processorScore * 6)}</div>
+                    <div className="text-xl font-semibold">
+                        {Math.round(
+                            stats.autoL4 * 5 +
+                                stats.autoL3 * 4 +
+                                stats.autoL2 * 3 +
+                                stats.autoL1 * 2 +
+                                stats.netScore * 4 +
+                                stats.processorScore * 6
+                        )}
+                    </div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Average Endgame Score</div>
@@ -83,10 +109,22 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({teamNumber}) => {
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Average Total Score</div>
-                    <div className="text-xl font-semibold">{Math.round(stats.autoL4 * 7 +
-                        stats.autoL3 * 6 + stats.autoL2 * 4 + stats.autoL1 * 3 + 3 + stats.autoL4 * 5 +
-                        stats.autoL3 * 4 + stats.autoL2 * 3 + stats.autoL1 * 2 + stats.netScore * 4 +
-                        stats.netScore * 4 + stats.processorScore * 6 + stats.climbRate * 0.12)}</div>
+                    <div className="text-xl font-semibold">
+                        {Math.round(
+                            stats.autoL4 * 7 +
+                                stats.autoL3 * 6 +
+                                stats.autoL2 * 4 +
+                                stats.autoL1 * 3 +
+                                3 +
+                                stats.autoL4 * 5 +
+                                stats.autoL3 * 4 +
+                                stats.autoL2 * 3 +
+                                stats.autoL1 * 2 +
+                                stats.netScore * 4 +
+                                stats.processorScore * 6 +
+                                stats.climbRate * 0.12
+                        )}
+                    </div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Climb Success Rate</div>
@@ -99,7 +137,7 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({teamNumber}) => {
                 <div className="p-3 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-500">Defense Rating</div>
                     <div className="text-xl font-semibold">
-                        {stats.defenseRating < 2 ? "Not Defensive" : `${stats.defenseRating}/10`}
+                        {stats.defenseRating < 2 ? 'Not Defensive' : `${stats.defenseRating}/10`}
                     </div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">

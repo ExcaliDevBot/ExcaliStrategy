@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+// @ts-ignore: Ignore missing type declaration for Firebase module
 import {getDatabase, ref, onValue} from '../firebase/firebase.js';
 
 interface Match {
@@ -78,7 +79,7 @@ const UpcomingMatches: React.FC = () => {
                             match.alliances.red.team_keys.includes('frc6738') ||
                             match.alliances.blue.team_keys.includes('frc6738'),
                     }))
-                    .sort((a, b) => {
+                    .sort((a: Match, b: Match) => {
                         if (a.time === 'TBD') return 1; // Place TBD matches at the end
                         if (b.time === 'TBD') return -1;
                         return new Date(a.time).getTime() - new Date(b.time).getTime();
