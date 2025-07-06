@@ -1,163 +1,195 @@
-import React, { useState } from 'react';
-import { Search, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Sparkles, Loader2 } from 'lucide-react';
 import AllianceTeamCard from './AllianceTeamCard';
-
-// This would typically come from Firebase
-const mockRecommendations = [
-  {
-    teamNumber: 254,
-    teamName: 'The Cheesy Poofs',
-    overallRating: 98,
-    compatibilityScore: 92,
-    strengthsMatch: ['High Scoring', 'Defense', 'Consistent'],
-    weaknessesComplement: ['Ground Intake', 'Climb Reliability'],
-    recommendation: 'high' as const,
-    stats: {
-      avgScore: 58.2,
-      autoAvg: 12.5,
-      teleopAvg: 33.2,
-      endgameAvg: 12.5,
-    }
-  },
-  {
-    teamNumber: 1114,
-    teamName: 'Simbotics',
-    overallRating: 95,
-    compatibilityScore: 90,
-    strengthsMatch: ['High Scoring', 'Autonomous', 'Consistent'],
-    weaknessesComplement: ['Defense Capability', 'Speed'],
-    recommendation: 'high' as const,
-    stats: {
-      avgScore: 54.8,
-      autoAvg: 13.2,
-      teleopAvg: 29.6,
-      endgameAvg: 12.0,
-    }
-  },
-  {
-    teamNumber: 118,
-    teamName: 'Robonauts',
-    overallRating: 92,
-    compatibilityScore: 85,
-    strengthsMatch: ['High Scoring', 'Climb Specialist', 'Driver Skill'],
-    weaknessesComplement: ['Autonomous', 'Defense Against Top Teams'],
-    recommendation: 'high' as const,
-    stats: {
-      avgScore: 52.6,
-      autoAvg: 9.8,
-      teleopAvg: 31.3,
-      endgameAvg: 11.5,
-    }
-  },
-  {
-    teamNumber: 2056,
-    teamName: 'OP Robotics',
-    overallRating: 90,
-    compatibilityScore: 88,
-    strengthsMatch: ['Consistent', 'Autonomous', 'Defense'],
-    weaknessesComplement: ['High Goal Scoring', 'Cycle Speed'],
-    recommendation: 'medium' as const,
-    stats: {
-      avgScore: 49.3,
-      autoAvg: 11.7,
-      teleopAvg: 28.1,
-      endgameAvg: 9.5,
-    }
-  },
-  {
-    teamNumber: 1678,
-    teamName: 'Citrus Circuits',
-    overallRating: 89,
-    compatibilityScore: 83,
-    strengthsMatch: ['Consistent', 'Strategic', 'Reliable Climb'],
-    weaknessesComplement: ['Ground Intake', 'Defense'],
-    recommendation: 'medium' as const,
-    stats: {
-      avgScore: 47.8,
-      autoAvg: 10.5,
-      teleopAvg: 29.8,
-      endgameAvg: 7.5,
-    }
-  },
-  {
-    teamNumber: 3310,
-    teamName: 'Black Hawk Robotics',
-    overallRating: 85,
-    compatibilityScore: 78,
-    strengthsMatch: ['Defense', 'Low Goal Specialist', 'Driver Skill'],
-    weaknessesComplement: ['Autonomous', 'Climb Capabilities'],
-    recommendation: 'medium' as const,
-    stats: {
-      avgScore: 42.1,
-      autoAvg: 8.2,
-      teleopAvg: 26.4,
-      endgameAvg: 7.5,
-    }
-  },
-  {
-    teamNumber: 195,
-    teamName: 'CyberKnights',
-    overallRating: 83,
-    compatibilityScore: 76,
-    strengthsMatch: ['Consistent', 'Defensive Capability', 'Strategic'],
-    weaknessesComplement: ['Cycle Speed', 'Autonomous'],
-    recommendation: 'low' as const,
-    stats: {
-      avgScore: 40.2,
-      autoAvg: 7.8,
-      teleopAvg: 25.9,
-      endgameAvg: 6.5,
-    }
-  },
-];
+import { aiService } from '../../services/aiService';
+import { teamDataService, TeamPerformanceData } from '../../services/teamDataService';
 
 const AllianceRecommendations: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRecommendation, setFilterRecommendation] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [allTeamsData, setAllTeamsData] = useState<TeamPerformanceData[]>([]);
+  const [aiInsights, setAiInsights] = useState<string>('');
+  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const filteredTeams = mockRecommendations.filter(team => {
-    const matchesSearch = 
-      searchTerm === '' || 
-      team.teamNumber.toString().includes(searchTerm) ||
-      team.teamName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = 
-      filterRecommendation === 'all' || 
-      team.recommendation === filterRecommendation;
-    
-    return matchesSearch && matchesFilter;
-  });
+  const yourTeamNumber = 6738; // This would typically come from settings or context
+
+  useEffect(() => {
+    loadTeamData();
+  }, []);
+
+  const loadTeamData = async () => {
+    try {
+      const teamsData = await teamDataService.getAllAvailableTeams();
+      setAllTeamsData(teamsData);
+    } catch (error) {
+      console.error('Error loading team data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateAIInsights = async () => {
+    setIsGeneratingInsights(true);
+    try {
+      const availableTeams = allTeamsData
+        .filter(team => team.teamNumber !== yourTeamNumber)
+        .map(team => team.teamNumber);
+
+      const insights = await aiService.generateAllianceSelectionInsights(
+        yourTeamNumber,
+        availableTeams
+      );
+      setAiInsights(insights);
+    } catch (error) {
+      console.error('Error generating AI insights:', error);
+    } finally {
+      setIsGeneratingInsights(false);
+    }
+  };
+
+  // Convert team data to the format expected by AllianceTeamCard
+  const convertToCardFormat = (teamData: TeamPerformanceData) => {
+    const { stats, calculatedMetrics } = teamData;
+
+    // Determine recommendation level based on performance
+    let recommendation: 'high' | 'medium' | 'low' = 'medium';
+    if (calculatedMetrics.avgTotalScore >= 50 && calculatedMetrics.consistencyRating >= 7) {
+      recommendation = 'high';
+    } else if (calculatedMetrics.avgTotalScore < 35 || calculatedMetrics.consistencyRating < 5) {
+      recommendation = 'low';
+    }
+
+    // Generate strengths and weaknesses based on data
+    const strengthsMatch: string[] = [];
+    const weaknessesComplement: string[] = [];
+
+    if (calculatedMetrics.avgAutoScore >= 15) strengthsMatch.push('Strong Autonomous');
+    if (calculatedMetrics.avgTeleopScore >= 30) strengthsMatch.push('High Teleop Scoring');
+    if (calculatedMetrics.climbSuccessRate >= 80) strengthsMatch.push('Reliable Climbing');
+    if (calculatedMetrics.consistencyRating >= 7) strengthsMatch.push('Consistent Performance');
+    if (stats.defenseRating >= 5) strengthsMatch.push('Defensive Capability');
+
+    if (calculatedMetrics.avgAutoScore < 10) weaknessesComplement.push('Autonomous Improvement');
+    if (calculatedMetrics.climbSuccessRate < 60) weaknessesComplement.push('Climbing Reliability');
+    if (stats.defenseRating < 3) weaknessesComplement.push('Defense Capability');
+    if (calculatedMetrics.consistencyRating < 6) weaknessesComplement.push('Consistency');
+
+    return {
+      teamNumber: teamData.teamNumber,
+      teamName: `Team ${teamData.teamNumber}`, // You might want to fetch actual team names
+      overallRating: Math.min(100, Math.round(calculatedMetrics.avgTotalScore * 1.5 + calculatedMetrics.consistencyRating * 5)),
+      compatibilityScore: Math.round(85 + Math.random() * 15), // This could be calculated based on complementary analysis
+      strengthsMatch,
+      weaknessesComplement,
+      recommendation,
+      stats: {
+        avgScore: calculatedMetrics.avgTotalScore,
+        autoAvg: calculatedMetrics.avgAutoScore,
+        teleopAvg: calculatedMetrics.avgTeleopScore,
+        endgameAvg: calculatedMetrics.avgEndgameScore,
+      }
+    };
+  };
+
+  const filteredTeams = allTeamsData
+    .filter(team => team.teamNumber !== yourTeamNumber) // Exclude your own team
+    .map(convertToCardFormat)
+    .filter(team => {
+      const matchesSearch =
+        searchTerm === '' ||
+        team.teamNumber.toString().includes(searchTerm) ||
+        team.teamName.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesFilter =
+        filterRecommendation === 'all' ||
+        team.recommendation === filterRecommendation;
+
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => b.overallRating - a.overallRating); // Sort by overall rating
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-neutral-500">Loading team data...</div>
+      </div>
+    );
+  }
+
+  const yourTeamData = allTeamsData.find(team => team.teamNumber === yourTeamNumber);
 
   return (
     <div>
+      {/* AI Insights Section */}
+      <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center">
+            <Sparkles size={18} className="mr-2 text-purple-500" />
+            AI Alliance Selection Insights
+          </h3>
+          <button
+            onClick={generateAIInsights}
+            disabled={isGeneratingInsights}
+            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50 flex items-center"
+          >
+            {isGeneratingInsights ? (
+              <Loader2 size={16} className="mr-2 animate-spin" />
+            ) : (
+              <Sparkles size={16} className="mr-2" />
+            )}
+            {isGeneratingInsights ? 'Analyzing...' : 'Generate AI Recommendations'}
+          </button>
+        </div>
+
+        {aiInsights && (
+          <div className="bg-white p-4 rounded-md border border-purple-100">
+            <div className="whitespace-pre-wrap text-neutral-700 text-sm">
+              {aiInsights}
+            </div>
+          </div>
+        )}
+
+        {!aiInsights && !isGeneratingInsights && (
+          <div className="text-center py-4 text-neutral-500">
+            Click "Generate AI Recommendations" to get data-driven alliance selection insights.
+          </div>
+        )}
+      </div>
+
+      {/* Strategy Overview */}
       <div className="mb-6 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
         <h3 className="text-lg font-semibold mb-2">Alliance Selection Strategy</h3>
         <p className="text-neutral-600 mb-4">
-          Based on your team's strengths in scoring high goals and consistent autonomous, we recommend selecting alliance partners that complement with strong defense capabilities and reliable climbing.
+          Based on your team's performance data and available teams, here are strategic recommendations for alliance selection.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div className="p-3 bg-white rounded-md border border-neutral-200">
-            <p className="font-medium text-neutral-700 mb-1">Your Team Strengths</p>
-            <ul className="list-disc list-inside text-neutral-600">
-              <li>Consistent high goal scoring</li>
-              <li>Reliable autonomous routines</li>
-              <li>Fast cycle times</li>
-            </ul>
-          </div>
-          <div className="p-3 bg-white rounded-md border border-neutral-200">
-            <p className="font-medium text-neutral-700 mb-1">Your Team Weaknesses</p>
-            <ul className="list-disc list-inside text-neutral-600">
-              <li>Limited defense capabilities</li>
-              <li>Inconsistent climbing</li>
-              <li>Struggles with ground intakes</li>
-            </ul>
+            <p className="font-medium text-neutral-700 mb-1">Your Team Performance</p>
+            {yourTeamData ? (
+              <ul className="list-disc list-inside text-neutral-600">
+                <li>Avg Score: {yourTeamData.calculatedMetrics.avgTotalScore}</li>
+                <li>Consistency: {yourTeamData.calculatedMetrics.consistencyRating}/10</li>
+                <li>Climb Rate: {yourTeamData.calculatedMetrics.climbSuccessRate}%</li>
+              </ul>
+            ) : (
+              <p className="text-neutral-500">Team data not available</p>
+            )}
           </div>
           <div className="p-3 bg-white rounded-md border border-neutral-200">
             <p className="font-medium text-neutral-700 mb-1">Look For Partners With</p>
             <ul className="list-disc list-inside text-neutral-600">
-              <li>Strong defensive capabilities</li>
+              <li>Complementary strengths</li>
+              <li>High consistency ratings</li>
               <li>Reliable climbing mechanisms</li>
-              <li>Effective ground intakes</li>
+            </ul>
+          </div>
+          <div className="p-3 bg-white rounded-md border border-neutral-200">
+            <p className="font-medium text-neutral-700 mb-1">Available Teams</p>
+            <ul className="list-disc list-inside text-neutral-600">
+              <li>Total: {allTeamsData.length - 1} teams</li>
+              <li>High rated: {filteredTeams.filter(t => t.recommendation === 'high').length}</li>
+              <li>Medium rated: {filteredTeams.filter(t => t.recommendation === 'medium').length}</li>
             </ul>
           </div>
         </div>
