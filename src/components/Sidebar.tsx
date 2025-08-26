@@ -8,7 +8,8 @@ import {
   Users, 
   Flag, 
   Settings as SettingsIcon,
-  X
+  X,
+  Scale
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -24,6 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     { path: '/pit-scouting', icon: <Wrench size={20} />, label: 'Pit Scouting' },
     { path: '/team-analysis', icon: <BarChart2 size={20} />, label: 'Team Analysis' },
     { path: '/alliance-selection', icon: <Users size={20} />, label: 'Alliance Selection' },
+    { path: '/alliance-comparator', icon: <Scale size={20} />, label: 'Alliance Comparator' },
     { path: '/match-strategy', icon: <Flag size={20} />, label: 'Match Strategy' },
     { path: '/settings', icon: <SettingsIcon size={20} />, label: 'Settings' },
   ];

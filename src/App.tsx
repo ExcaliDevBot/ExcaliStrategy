@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -9,6 +8,7 @@ import AllianceSelection from './pages/AllianceSelection';
 import MatchStrategy from './pages/MatchStrategy';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
+import AllianceComparator from './pages/AllianceComparator';
 
 function App() {
   return (
@@ -22,6 +22,7 @@ function App() {
           <Route path="alliance-selection" element={<AllianceSelection />} />
           <Route path="match-strategy" element={<MatchStrategy />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="alliance-comparator" element={<AllianceComparator />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
