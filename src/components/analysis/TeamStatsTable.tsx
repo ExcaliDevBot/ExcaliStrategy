@@ -1,29 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, ArrowRightFromLine } from 'lucide-react';
 import { teamDataService, TeamPerformanceData } from '../../services/teamDataService';
+import { getStatboticsTeamPerformance, TeamPerformanceDataLike } from '../../services/statboticsService';
 
 interface TeamStatsTableProps {
   teamNumber: number;
+  dataSource?: 'scouting' | 'statbotics';
+  eventKey?: string;
 }
 
-const TeamStatsTable: React.FC<TeamStatsTableProps> = ({ teamNumber }) => {
-  const [teamData, setTeamData] = useState<TeamPerformanceData | null>(null);
+type UnifiedTeamData = TeamPerformanceData | TeamPerformanceDataLike;
+
+const TeamStatsTable: React.FC<TeamStatsTableProps> = ({ teamNumber, dataSource='scouting', eventKey='2025iscmp' }) => {
+  const [teamData, setTeamData] = useState<UnifiedTeamData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const data = await teamDataService.getTeamStats(teamNumber);
-        setTeamData(data);
+        setError(null);
+        setLoading(true);
+        if (dataSource === 'statbotics') {
+          const statData = await getStatboticsTeamPerformance(teamNumber, eventKey);
+            setTeamData(statData);
+        } else {
+          const data = await teamDataService.getTeamStats(teamNumber);
+          setTeamData(data);
+        }
       } catch (error) {
         console.error('Error fetching team stats:', error);
+        setError('Failed to load team data');
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, [teamNumber]);
+  }, [teamNumber, dataSource, eventKey]);
 
   if (loading) {
     return (
@@ -36,17 +50,23 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({ teamNumber }) => {
   if (!teamData) {
     return (
       <div className="text-center py-8">
-        <div className="text-neutral-500">No stats available for Team {teamNumber}.</div>
+        <div className="text-neutral-500">{error || `No stats available for Team ${teamNumber}.`}</div>
       </div>
     );
   }
 
-  const { stats, calculatedMetrics } = teamData;
+  const { stats, calculatedMetrics } = teamData as UnifiedTeamData['stats'] extends infer S
+    ? { stats: (UnifiedTeamData['stats']); calculatedMetrics: UnifiedTeamData['calculatedMetrics'] }
+    : never;
+  const usingStatbotics = dataSource === 'statbotics';
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Team {teamNumber} Performance Stats</h3>
+        <div className="flex items-center gap-3 text-xs text-neutral-500">
+          <span className="px-2 py-0.5 rounded-full border bg-neutral-50">Source: {usingStatbotics ? 'Statbotics' : 'Scouting DB'}</span>
+        </div>
         <div className="flex items-center text-sm">
           <span className="text-neutral-500 mr-2">Performance Trend:</span>
           {stats.performanceTrend === 'upward' ? (
@@ -95,7 +115,7 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({ teamNumber }) => {
         </div>
         <div className="p-3 bg-neutral-50 rounded-lg">
           <div className="text-sm text-neutral-500">Defense Rating</div>
-          <div className="text-xl font-semibold">{calculatedMetrics.defenseCapability}</div>
+          <div className="text-xl font-semibold">{usingStatbotics ? 'N/A' : calculatedMetrics.defenseCapability}</div>
         </div>
         <div className="p-3 bg-neutral-50 rounded-lg">
           <div className="text-sm text-neutral-500">Matches Played</div>
@@ -105,21 +125,22 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({ teamNumber }) => {
 
       <div className="grid grid-cols-3 gap-4 mt-4">
         <div className="p-3 bg-primary-50 rounded-lg border border-primary-100">
-          <div className="text-sm text-primary-700">OPR (Offensive Power Rating)</div>
-          <div className="text-xl font-semibold text-primary-800">{stats.opr.toFixed(3)}</div>
+          <div className="text-sm text-primary-700">OPR</div>
+          <div className="text-xl font-semibold text-primary-800">{stats.opr?.toFixed ? stats.opr.toFixed(3) : stats.opr}</div>
         </div>
         <div className="p-3 bg-secondary-50 rounded-lg border border-secondary-100">
-          <div className="text-sm text-secondary-700">DPR (Defensive Power Rating)</div>
-          <div className="text-xl font-semibold text-secondary-800">{stats.dpr.toFixed(3)}</div>
+          <div className="text-sm text-secondary-700">DPR</div>
+          <div className="text-xl font-semibold text-secondary-800">{stats.dpr?.toFixed ? stats.dpr.toFixed(3) : stats.dpr}</div>
         </div>
         <div className="p-3 bg-neutral-100 rounded-lg border border-neutral-200">
           <div className="text-sm text-neutral-700">CCWM</div>
           <div className="text-xl font-semibold text-neutral-800">{stats.ccwm}</div>
-          <div className="text-xs text-neutral-500">(Contribution to Win Margin)</div>
+          <div className="text-xs text-neutral-500">Contribution to Win Margin</div>
         </div>
       </div>
 
       {/* Detailed Performance Breakdown */}
+      {!usingStatbotics && (
       <div className="mt-6 bg-neutral-50 p-4 rounded-lg border border-neutral-200">
         <h4 className="font-semibold mb-3">Detailed Performance Breakdown</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -157,6 +178,10 @@ const TeamStatsTable: React.FC<TeamStatsTableProps> = ({ teamNumber }) => {
           </div>
         </div>
       </div>
+      )}
+      {usingStatbotics && (
+        <div className="mt-6 text-xs text-neutral-500 italic">Detailed element-level breakdown not available from Statbotics API and is hidden.</div>
+      )}
     </div>
   );
 };

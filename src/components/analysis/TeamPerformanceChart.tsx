@@ -12,60 +12,83 @@ import {
     LineChart,
     Line
 } from 'recharts';
+import { getStatboticsTeamEventMatches } from '../../services/statboticsService';
 
 interface TeamPerformanceChartProps {
     teamNumber: number;
+    dataSource?: 'scouting' | 'statbotics';
+    eventKey?: string;
 }
 
-const TeamPerformanceChart: React.FC<TeamPerformanceChartProps> = ({teamNumber}) => {
+const TeamPerformanceChart: React.FC<TeamPerformanceChartProps> = ({teamNumber, dataSource='scouting', eventKey='2025iscmp'}) => {
     const [chartType, setChartType] = useState<'stacked' | 'line'>('stacked');
-    const [data, setData] = useState<any[]>([]);
+    interface PerfRow { rawMatch: string; match: string; auto: number; teleop: number; endgame: number; total: number; source: 'statbotics' | 'scouting'; }
+    const [data, setData] = useState<PerfRow[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
-            const db = getDatabase();
-            const matchesRef = ref(db, `processedData/${teamNumber}matches/`);
-
-            console.log('Fetching data from path:', `processedData/${teamNumber}matches/`);
-
+            setLoading(true);
+            setError(null);
             try {
-                const snapshot = await get(matchesRef);
-                console.log('Snapshot:', snapshot);
-
-                if (snapshot.exists()) {
-                    const rawData = snapshot.val();
-                    console.log('Raw data fetched:', rawData);
-
-                    const formattedData = Object.keys(rawData)
-                        .map((matchKey) => {
-                            const matchNumberMatch = matchKey.match(/M(\d+)/); // Extract the number after "M"
-                            const matchNumber = matchNumberMatch ? matchNumberMatch[1] : matchKey; // Default to matchKey if no match
-                            const {autoScore, teleopScore, endgameScore} = rawData[matchKey];
-                            return {
-                                match: matchNumber, // Use the extracted match number
-                                auto: autoScore || 0,
-                                teleop: teleopScore || 0,
-                                endgame: endgameScore || 0,
-                                total: (autoScore || 0) + (teleopScore || 0) + (endgameScore || 0),
-                            };
-                        })
-                        .sort((a, b) => parseInt(a.match) - parseInt(b.match)); // Sort by numeric match number
-                    setData(formattedData);
+                if (dataSource === 'statbotics') {
+                    const matches = await getStatboticsTeamEventMatches(teamNumber, eventKey);
+                    const formatted: PerfRow[] = matches.map(m => {
+                        const numeric = (m.match || '').replace(/^[^0-9]*/, '');
+                        const auto = m.epa_breakdown?.auto ?? m.epa_breakdown?.auto_points ?? 0;
+                        const teleop = m.epa_breakdown?.teleop ?? m.epa_breakdown?.teleop_points ?? 0;
+                        const endgame = m.epa_breakdown?.endgame ?? m.epa_breakdown?.endgame_points ?? 0;
+                        const total = m.epa_breakdown?.total ?? m.epa_breakdown?.total_points ?? (auto+teleop+endgame);
+                        return { rawMatch: m.match, match: numeric || m.match, auto, teleop, endgame, total, source: 'statbotics' };
+                    }).sort((a,b)=> parseInt(a.match)-parseInt(b.match));
+                    setData(formatted);
                 } else {
-                    console.error('No data found for the specified team. Snapshot exists:', snapshot.exists());
+                    const db = getDatabase();
+                    const matchesRef = ref(db, `processedData/${teamNumber}matches/`);
+                    const snapshot = await get(matchesRef);
+                    if (snapshot.exists()) {
+                        const rawData = snapshot.val();
+                        const formattedData: PerfRow[] = Object.keys(rawData)
+                            .map((matchKey) => {
+                                const matchNumberMatch = matchKey.match(/M(\d+)/);
+                                const matchNumber = matchNumberMatch ? matchNumberMatch[1] : matchKey;
+                                const {autoScore, teleopScore, endgameScore} = rawData[matchKey];
+                                const auto = autoScore || 0;
+                                const teleop = teleopScore || 0;
+                                const endgame = endgameScore || 0;
+                                const total = auto + teleop + endgame;
+                                return { rawMatch: matchKey, match: matchNumber, auto, teleop, endgame, total, source: 'scouting' };
+                            })
+                            .sort((a, b) => parseInt(a.match) - parseInt(b.match));
+                         setData(formattedData);
+                    } else {
+                        setData([]);
+                    }
                 }
-            } catch (error) {
-                console.error('Error fetching data:', error);
+            } catch (e) {
+                console.error('Error fetching data:', e);
+                setError('Failed to load chart data');
+                setData([]);
+            } finally {
+                setLoading(false);
             }
         };
-
         fetchData();
-    }, [teamNumber]);
+    }, [teamNumber, dataSource, eventKey]);
+
+    if (loading) {
+        return <div className="h-80 flex items-center justify-center text-neutral-500 text-sm">Loading chart...</div>;
+    }
+    if (error) {
+        return <div className="h-80 flex items-center justify-center text-neutral-500 text-sm">{error}</div>;
+    }
 
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">Match Performance History</h3>
+                <div className="text-xs text-neutral-400 mr-4">Source: {dataSource === 'statbotics' ? 'Statbotics' : 'Scouting'}</div>
                 <div className="flex space-x-2">
                     <button
                         className={`px-3 py-1 text-sm rounded-md ${
@@ -129,6 +152,40 @@ const TeamPerformanceChart: React.FC<TeamPerformanceChartProps> = ({teamNumber})
                         </LineChart>
                     )}
                 </ResponsiveContainer>
+            </div>
+            <div className="mt-6">
+              <h4 className="text-sm font-semibold mb-2">Match Breakdown</h4>
+              <div className="overflow-x-auto border border-neutral-200 rounded-md max-h-72">
+                <table className="min-w-full text-xs">
+                  <thead className="bg-neutral-100 sticky top-0 z-10">
+                    <tr className="text-neutral-600">
+                      <th className="py-2 px-2 text-left">#</th>
+                      <th className="py-2 px-2 text-right">Auto</th>
+                      <th className="py-2 px-2 text-right">Teleop</th>
+                      <th className="py-2 px-2 text-right">Endgame</th>
+                      <th className="py-2 px-2 text-right">Total</th>
+                      <th className="py-2 px-2 text-center">Src</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.length === 0 && (
+                      <tr><td colSpan={6} className="py-4 px-3 text-center text-neutral-500">No match data available.</td></tr>
+                    )}
+                    {data.map(row => (
+                      <tr key={row.rawMatch} className="border-t hover:bg-neutral-50">
+                        <td className="py-1.5 px-2 font-medium">{row.match}</td>
+                        <td className="py-1.5 px-2 text-right">{row.auto}</td>
+                        <td className="py-1.5 px-2 text-right">{row.teleop}</td>
+                        <td className="py-1.5 px-2 text-right">{row.endgame}</td>
+                        <td className="py-1.5 px-2 text-right font-semibold">{row.total}</td>
+                        <td className="py-1.5 px-2 text-center">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${row.source==='statbotics' ? 'bg-blue-100 text-blue-700' : 'bg-primary-100 text-primary-700'}`}>{row.source==='statbotics' ? 'SB' : 'SC'}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
         </div>
     );

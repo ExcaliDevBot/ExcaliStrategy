@@ -16,10 +16,11 @@ const TeamAnalysis: React.FC = () => {
     const [selectedTeam, setSelectedTeam] = useState<number | null>(null);
     const [selectedTab, setSelectedTab] = useState<'performance' | 'comparison'>('performance');
     const [teams, setTeams] = useState<{ teamNumber: number; teamName: string }[]>([]);
+    const [dataSource, setDataSource] = useState<'scouting' | 'statbotics'>('scouting');
+    const eventKey = localStorage.getItem('eventKey') || '2025iscmp';
 
     useEffect(() => {
         const fetchTeams = async () => {
-            const eventKey = localStorage.getItem('eventKey') || '2025iscmp';
             const apiKey = 'DGOg0BIAQjm8EO3EkO50txFeLxpklBtotoW9qnHxUzoeecJIlRzOz8CsgNjZ4fyO';
 
             try {
@@ -33,7 +34,8 @@ const TeamAnalysis: React.FC = () => {
                 );
 
                 if (!response.ok) {
-                    throw new Error(`Error fetching teams: ${response.statusText}`);
+                    console.warn('Error fetching teams:', response.statusText);
+                    return;
                 }
 
                 const data = await response.json();
@@ -48,7 +50,7 @@ const TeamAnalysis: React.FC = () => {
         };
 
         fetchTeams();
-    }, []);
+    }, [eventKey]);
 
     const filteredTeams = teams.filter(team =>
         team.teamNumber.toString().includes(searchTeam) ||
@@ -70,9 +72,24 @@ const TeamAnalysis: React.FC = () => {
 
     return (
         <div className="animate-fade-in">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-neutral-900">Team Analysis</h1>
-                <p className="text-neutral-500">Analyze performance data and team comparisons</p>
+            <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-neutral-900">Team Analysis</h1>
+                    <p className="text-neutral-500">Analyze performance data and team comparisons</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Data Source:</span>
+                    <div className="inline-flex rounded-md overflow-hidden border border-neutral-300">
+                        <button
+                          className={`px-3 py-1.5 text-sm font-medium transition ${dataSource==='scouting' ? 'bg-primary-500 text-white' : 'bg-white hover:bg-neutral-50 text-neutral-600'}`}
+                          onClick={()=>setDataSource('scouting')}
+                        >Scouting</button>
+                        <button
+                          className={`px-3 py-1.5 text-sm font-medium transition ${dataSource==='statbotics' ? 'bg-primary-500 text-white' : 'bg-white hover:bg-neutral-50 text-neutral-600'}`}
+                          onClick={()=>setDataSource('statbotics')}
+                        >Statbotics</button>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -147,8 +164,8 @@ const TeamAnalysis: React.FC = () => {
                             <div className="p-4">
                                 {selectedTab === 'performance' ? (
                                     <div className="space-y-6">
-                                        <TeamStatsTable teamNumber={selectedTeam}/>
-                                        <TeamPerformanceChart teamNumber={selectedTeam}/>
+                                        <TeamStatsTable teamNumber={selectedTeam} dataSource={dataSource} eventKey={eventKey}/>
+                                        <TeamPerformanceChart teamNumber={selectedTeam} dataSource={dataSource} eventKey={eventKey}/>
                                     </div>
                                 ) : (
                                     <TeamComparisonChart teamNumber={selectedTeam}/>
