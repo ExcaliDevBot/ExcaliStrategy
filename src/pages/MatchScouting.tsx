@@ -20,12 +20,18 @@ const MatchScouting: React.FC = () => {
               matchNumber: entry.Match,
               team: entry.Team,
               alliance: entry.Alliance,
-              notes: entry.Notes,
-              climbOption: entry.climbOption,
+              info: entry.Info,
+              l1: entry.L1,
+              l2: entry.L2,
+              l3: entry.L3,
+              l4: entry.L4,
               autoL1: entry.autoL1,
               autoL2: entry.autoL2,
               autoL3: entry.autoL3,
               autoL4: entry.autoL4,
+              autoRemoveAlgae: entry.autoRemoveAlgae,
+              notes: entry.Notes,
+              climbOption: entry.climbOption,
               defensivePins: entry.defensivePins,
             }));
             setMatches(formattedMatches);
@@ -46,11 +52,13 @@ const MatchScouting: React.FC = () => {
     setSearchQuery(e.target.value.toLowerCase());
   };
 
-  const filteredMatches = matches.filter(
-    (match) =>
-      match.team.toString().includes(searchQuery) ||
-      match.matchNumber.toString().includes(searchQuery)
-  );
+  const filteredMatches = matches
+    .filter(
+      (match) =>
+        match.team.toString().includes(searchQuery) ||
+        match.matchNumber.toString().includes(searchQuery)
+    )
+    .sort((a, b) => a.matchNumber - b.matchNumber);
 
   return (
     <div className="animate-fade-in p-6 bg-gray-50 min-h-screen">
@@ -70,58 +78,58 @@ const MatchScouting: React.FC = () => {
       </div>
 
       <div className="overflow-x-auto bg-white rounded-lg border border-neutral-200">
-        {loading ? (
-          <p className="text-gray-500 text-center py-6">Loading matches...</p>
-        ) : filteredMatches.length > 0 ? (
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-neutral-50 border-b border-neutral-200">
-                <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Match</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Team</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Alliance</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Climb Option</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Auto L1</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Auto L2</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Auto L3</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Auto L4</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Defensive Pins</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Notes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-200">
-              {filteredMatches.map((match, index) => (
-                <tr key={index} className="hover:bg-neutral-50">
-                  <td className="py-3 px-4 text-sm text-neutral-900">{match.matchNumber}</td>
-                  <td className="py-3 px-4 text-sm text-neutral-900">{match.team}</td>
-                  <td className="py-3 px-4 text-sm">
-                    {match.alliance ? (
-                      <span
-                        className={`px-2 py-1 rounded text-white text-xs ${
-                          match.alliance === 'Red' ? 'bg-red-500' : 'bg-blue-500'
-                        }`}
-                      >
-                        {match.alliance}
-                      </span>
-                    ) : (
-                      <span className="text-neutral-400">N/A</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-neutral-900">{match.climbOption}</td>
-                  <td className="py-3 px-4 text-sm text-neutral-900">{match.autoL1}</td>
-                  <td className="py-3 px-4 text-sm text-neutral-900">{match.autoL2}</td>
-                  <td className="py-3 px-4 text-sm text-neutral-900">{match.autoL3}</td>
-                  <td className="py-3 px-4 text-sm text-neutral-900">{match.autoL4}</td>
-                  <td className="py-3 px-4 text-sm text-neutral-900">{match.defensivePins}</td>
-                  <td className="py-3 px-4 text-sm text-neutral-500 max-w-[200px] truncate" title={match.notes}>
-                    {match.notes || 'None'}
-                  </td>
+        <div className="max-h-[70vh] overflow-y-auto">
+          {loading ? (
+            <p className="text-gray-500 text-center py-6">Loading matches...</p>
+          ) : filteredMatches.length > 0 ? (
+            <table className="min-w-full sticky-table">
+              <thead className="sticky top-0 z-10 bg-neutral-50 border-b border-neutral-200">
+                <tr>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Match</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Team</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Alliance</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Info</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">L1</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">L2</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">L3</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">L4</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Auto L1</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Auto L2</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Auto L3</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Auto L4</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Auto Remove Algae</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Climb Option</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Defensive Pins</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Notes</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="text-gray-500 text-center py-6">No matches found.</p>
-        )}
+              </thead>
+              <tbody className="divide-y divide-neutral-200">
+                {filteredMatches.map((match, index) => (
+                  <tr key={index} className="hover:bg-blue-50 even:bg-gray-50 transition-colors duration-150">
+                    <td className="py-3 px-4 text-sm text-neutral-900 font-semibold text-center align-middle border-r border-gray-200">{match.matchNumber}</td>
+                    <td className="py-3 px-4 text-sm text-neutral-900 font-semibold text-center align-middle border-r border-gray-200">{match.team}</td>
+                    <td className={`py-3 px-4 text-sm font-bold text-center align-middle border-r border-gray-200 rounded ${String(match.alliance).toLowerCase() === 'red' ? 'bg-red-100 text-red-700' : String(match.alliance).toLowerCase() === 'blue' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-neutral-900'}`}>{match.alliance}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.info}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.l1}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.l2}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.l3}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.l4}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.autoL1}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.autoL2}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.autoL3}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.autoL4}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.autoRemoveAlgae}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.climbOption}</td>
+                    <td className="py-3 px-4 text-sm text-center align-middle border-r border-gray-200">{match.defensivePins}</td>
+                    <td className="py-3 px-4 text-sm text-left align-middle">{match.notes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-gray-500 text-center py-6">No matches found.</p>
+          )}
+        </div>
       </div>
     </div>
   );
