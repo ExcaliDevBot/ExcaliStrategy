@@ -9,6 +9,7 @@ import MatchStrategy from './pages/MatchStrategy';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import AllianceComparator from './pages/AllianceComparator';
+import SuperScoutingResults from './pages/SuperScoutingResults';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="match-strategy" element={<MatchStrategy />} />
           <Route path="settings" element={<Settings />} />
           <Route path="alliance-comparator" element={<AllianceComparator />} />
+          <Route path="super-scouting-results" element={<SuperScoutingResults />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
