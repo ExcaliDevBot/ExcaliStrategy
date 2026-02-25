@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, BarChart2, PlusCircle, Shield } from 'lucide-react';
+import { Star, BarChart2, PlusCircle } from 'lucide-react';
 
 interface AllianceTeamCardProps {
   team: {
@@ -22,122 +22,103 @@ interface AllianceTeamCardProps {
   showAddButton?: boolean;
 }
 
-const AllianceTeamCard: React.FC<AllianceTeamCardProps> = ({ 
-  team, 
-  onAddTeam, 
+const AllianceTeamCard: React.FC<AllianceTeamCardProps> = ({
+  team,
+  onAddTeam,
   selected = false,
-  showAddButton = false
+  showAddButton = false,
 }) => {
+  const renderStars = () => {
+    if (team.recommendation === 'high') return 3;
+    if (team.recommendation === 'medium') return 2;
+    return 1;
+  };
+
   return (
-    <div 
-      className={`border rounded-lg overflow-hidden transition-all ${
-        selected 
-          ? 'border-secondary-500 bg-secondary-50' 
-          : 'border-neutral-200 bg-white hover:shadow-md'
+    <div
+      className={`rounded-md border transition-colors text-[11px] ${
+        selected
+          ? 'border-secondary-500 bg-secondary-50 shadow-sm'
+          : 'border-neutral-200 bg-white hover:border-neutral-300'
       }`}
     >
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <div className="flex items-center">
-              <h3 className="text-lg font-semibold">Team {team.teamNumber}</h3>
-              {team.recommendation === 'high' && (
-                <div className="ml-2 flex items-center text-secondary-600">
-                  <Star size={16} className="fill-secondary-500 text-secondary-500" />
-                  <Star size={16} className="fill-secondary-500 text-secondary-500" />
-                  <Star size={16} className="fill-secondary-500 text-secondary-500" />
-                </div>
-              )}
-              {team.recommendation === 'medium' && (
-                <div className="ml-2 flex items-center text-secondary-600">
-                  <Star size={16} className="fill-secondary-500 text-secondary-500" />
-                  <Star size={16} className="fill-secondary-500 text-secondary-500" />
-                  <Star size={16} className="text-secondary-300" />
-                </div>
-              )}
-              {team.recommendation === 'low' && (
-                <div className="ml-2 flex items-center text-secondary-600">
-                  <Star size={16} className="fill-secondary-500 text-secondary-500" />
-                  <Star size={16} className="text-secondary-300" />
-                  <Star size={16} className="text-secondary-300" />
-                </div>
-              )}
+      <div className="px-3 py-2 space-y-1.5">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-sm">{team.teamNumber}</span>
+              <span className="text-[10px] uppercase tracking-wide text-neutral-400">team</span>
+              <div className="flex items-center ml-1 text-secondary-500">
+                {Array.from({ length: renderStars() }).map((_, i) => (
+                  <Star
+                    key={i}
+                    size={11}
+                    className="fill-secondary-500 text-secondary-500"
+                  />
+                ))}
+              </div>
             </div>
-            <p className="text-neutral-500">{team.teamName}</p>
+            <p className="text-[10px] text-neutral-500 truncate max-w-[160px]">
+              {team.teamName}
+            </p>
           </div>
-          
+
           {showAddButton && onAddTeam && (
-            <button 
+            <button
               onClick={() => onAddTeam(team.teamNumber)}
-              className="p-2 rounded-full bg-primary-50 text-primary-500 hover:bg-primary-100"
+              className="inline-flex items-center rounded-full border border-neutral-200 px-2 py-0.5 text-[10px] text-neutral-700 hover:bg-neutral-50 whitespace-nowrap"
             >
-              <PlusCircle size={20} />
+              <PlusCircle size={12} className="mr-1" />
+              Add
             </button>
           )}
         </div>
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <p className="text-sm text-neutral-500 mb-1">Overall Rating</p>
-            <div className="flex items-center">
-              <Shield size={16} className="text-primary-500 mr-1" />
-              <span className="font-semibold">{team.overallRating}/100</span>
-            </div>
+
+        {/* Ratings + stats in one compact row */}
+        <div className="flex items-center justify-between gap-2 mt-1">
+          <div className="flex items-center gap-1.5 text-neutral-600">
+            <span className="text-[10px] uppercase tracking-wide text-neutral-400">
+              OVR
+            </span>
+            <span className="font-semibold text-sm">{team.overallRating}</span>
+            <span className="h-3 w-px bg-neutral-200" />
+            <BarChart2 size={12} className="text-secondary-500" />
+            <span className="text-[10px] uppercase tracking-wide text-neutral-400">
+              Fit
+            </span>
+            <span className="font-semibold text-xs">{team.compatibilityScore}</span>
           </div>
-          <div>
-            <p className="text-sm text-neutral-500 mb-1">Compatibility</p>
-            <div className="flex items-center">
-              <BarChart2 size={16} className="text-secondary-500 mr-1" />
-              <span className="font-semibold">{team.compatibilityScore}/100</span>
+
+          {team.stats && (
+            <div className="flex items-center gap-1 text-neutral-500">
+              <span className="px-1.5 py-0.5 rounded-full bg-neutral-50 border border-neutral-200 text-[10px]">
+                Avg {team.stats.avgScore.toFixed ? team.stats.avgScore.toFixed(1) : team.stats.avgScore}
+              </span>
             </div>
-          </div>
+          )}
         </div>
-        
-        {team.stats && (
-          <div className="grid grid-cols-4 gap-2 mb-4 bg-neutral-50 p-2 rounded-md">
-            <div className="text-center p-1">
-              <p className="text-xs text-neutral-500">Avg Score</p>
-              <p className="font-semibold text-sm">{team.stats.avgScore}</p>
-            </div>
-            <div className="text-center p-1">
-              <p className="text-xs text-neutral-500">Auto</p>
-              <p className="font-semibold text-sm">{team.stats.autoAvg}</p>
-            </div>
-            <div className="text-center p-1">
-              <p className="text-xs text-neutral-500">Teleop</p>
-              <p className="font-semibold text-sm">{team.stats.teleopAvg}</p>
-            </div>
-            <div className="text-center p-1">
-              <p className="text-xs text-neutral-500">Endgame</p>
-              <p className="font-semibold text-sm">{team.stats.endgameAvg}</p>
-            </div>
-          </div>
-        )}
-        
-        <div>
-          <p className="text-sm text-neutral-500 mb-1">Complementary Strengths</p>
-          <div className="flex flex-wrap gap-1 mb-3">
-            {team.strengthsMatch.map((strength, index) => (
-              <span 
-                key={index}
-                className="px-2 py-1 bg-primary-50 text-primary-700 text-xs rounded-md"
-              >
-                {strength}
-              </span>
-            ))}
-          </div>
-          
-          <p className="text-sm text-neutral-500 mb-1">Covers Weaknesses</p>
-          <div className="flex flex-wrap gap-1">
-            {team.weaknessesComplement.map((weakness, index) => (
-              <span 
-                key={index}
-                className="px-2 py-1 bg-secondary-50 text-secondary-700 text-xs rounded-md"
-              >
-                {weakness}
-              </span>
-            ))}
-          </div>
+
+        {/* Tags row, truncated */}
+        <div className="flex flex-wrap gap-1 mt-1">
+          {team.strengthsMatch.slice(0, 2).map((strength, index) => (
+            <span
+              key={`s-${index}`}
+              className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-100 max-w-[120px] truncate"
+              title={strength}
+            >
+              {strength}
+            </span>
+          ))}
+          {team.weaknessesComplement.slice(0, 1).map((weakness, index) => (
+            <span
+              key={`w-${index}`}
+              className="px-1.5 py-0.5 rounded-full bg-neutral-50 text-neutral-500 text-[10px] border border-neutral-200 max-w-[120px] truncate"
+              title={weakness}
+            >
+              {weakness}
+            </span>
+          ))}
         </div>
       </div>
     </div>

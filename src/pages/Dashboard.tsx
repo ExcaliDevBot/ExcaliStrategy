@@ -3,7 +3,7 @@ import MetricCard from '../components/MetricCard';
 import EventSchedule from '../components/EventSchedule';
 import TeamMatches from '../components/TeamMatches';
 import UpcomingMatches from '../components/UpcomingMatches';
-import {ArrowUp, Target, Users, Clock} from 'lucide-react';
+import {Target, Users, Clock} from 'lucide-react';
 // @ts-ignore: Ignore missing type declaration for Firebase module
 import {getDatabase, ref, onValue} from '../firebase/firebase.js';
 
@@ -140,58 +140,54 @@ const Dashboard: React.FC = () => {
     }, []);
 
     return (
-        <div className="animate-fade-in">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-neutral-900">Event Dashboard</h1>
-                <p className="text-neutral-500">Israel District Event #4</p>
+        <div className="animate-fade-in space-y-4">
+            <div>
+                <h1 className="text-xl font-semibold text-neutral-900">Event overview</h1>
+                <p className="text-xs text-neutral-500">Israel District Event #4 · Team 6738</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Key metrics - compact cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <MetricCard
-                    title="Your Team Ranking"
+                    title="Rank"
                     value={teamRanking}
-                    change={2}
-                    changeType="positive"
-                    icon={<Target className="text-primary-500"/>}
+                    icon={<Target className="text-primary-500" />}
                 />
                 <MetricCard
-                    title="Matches Scouted"
+                    title="Matches scouted"
                     value={matchesScouted}
-                    change={8}
-                    changeType="positive"
-                    icon={<Clock className="text-info"/>}
+                    icon={<Clock className="text-neutral-500" />}
                 />
                 <MetricCard
-                    title="Accuracy Rate"
+                    title="Scouting accuracy"
                     value={Accuracy}
-                    change={-4}
-                    changeType="negative"
-                    icon={<Users className="text-secondary-500"/>}
+                    icon={<Users className="text-secondary-500" />}
                 />
                 <MetricCard
-                    title="Qualification Score"
+                    title="Last qual score"
                     value={qualificationScore}
-                    change={1.2}
-                    changeType="negative"
-                    icon={<ArrowUp className="text-success"/>}
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-4">
-                    <TeamMatches/>
+            {/* Matches + upcoming - less chrome */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2 bg-white rounded-lg border border-neutral-200 p-3">
+                    <TeamMatches />
                 </div>
-                <div className="bg-white rounded-lg shadow-sm p-4 h-full pb-0">
-                    <h2 className="text-lg font-semibold mb-4">Upcoming Matches</h2>
-                    <UpcomingMatches/>
+                <div className="bg-white rounded-lg border border-neutral-200 p-3">
+                    <h2 className="text-sm font-medium mb-2">Upcoming matches</h2>
+                    <UpcomingMatches />
                 </div>
             </div>
-            <div className="bg-white rounded-lg shadow-sm p-4">
-                <h2 className="text-lg font-semibold mb-4">Event Schedule</h2>
-                <EventSchedule/>
+
+            {/* Schedule - simple block */}
+            <div className="bg-white rounded-lg border border-neutral-200 p-3">
+                <h2 className="text-sm font-medium mb-2">Todays schedule</h2>
+                <EventSchedule />
             </div>
         </div>
     );
 };
 
 export default Dashboard;
+
